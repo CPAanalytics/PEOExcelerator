@@ -7,11 +7,16 @@ End Sub
 Sub Workbook_Open()
     Debug.Print "Snowflake thisWorkbook_Open()"
     Set app = Excel.Application
+    WorksheetFunctions.RegisterFunctions
     'Only add ribbon buttons when this is not run as an Addin. These buttons are for Dev only 12
     If Not ThisWorkbook.IsAddin Then
         Call AddAllButtons
     End If
 
+End Sub
+
+Private Sub app_WorkbookBeforeClose(ByVal Wb As Workbook, Cancel As Boolean)
+    FormulaEngine.ReleaseWorkbook Wb
 End Sub
 
 Private Sub Workbook_BeforeClose(Cancel As Boolean)

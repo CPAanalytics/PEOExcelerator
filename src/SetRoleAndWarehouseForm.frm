@@ -186,6 +186,8 @@ Private Sub btDone_Click()
     Call Utils.execSQLFireAndForget("use warehouse " & cbWarehouses)
     Utils.CustomRange(sgRangeRole) = cbRoles
     Utils.CustomRange(sgRangeWarehouse) = cbWarehouses
+    Utils.NotifyFormulaConnection
+    Utils.CalculateWorkbook ActiveWorkbook
     Set SetRoleAndWarehouseForm = Nothing
     Exit Sub
     

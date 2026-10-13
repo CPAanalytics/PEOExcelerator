@@ -1,0 +1,4 @@
+# VBA exports use Windows line endings; retain normal whitespace checks.
+*.bas whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+*.frm whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+*.cls whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
