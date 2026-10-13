@@ -7,9 +7,9 @@ Sub ConfigSnowflakeAddIn()
         Exit Sub
     End If
     
-    For Each n In ThisWorkbook.Names
-        On Error GoTo createName
-    Next n
+    ' Initialize configuration through the shared implementation. The former
+    ' placeholder referenced a nonexistent error label and could not compile.
+    Utils.CopySnowflakeConfgWS
 
 End Sub
 

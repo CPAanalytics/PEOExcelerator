@@ -2,6 +2,7 @@
 
 Excelerator is an Excel Add-In to help you pull data from Snowflake into Excel and push new or updated data from Excel into Snowflake.
 Excelerator is only compatible with the Windows operating system, not the MacOS.
+The worksheet functions introduced in version 1.2 require Microsoft 365 Excel for Windows with dynamic arrays.
 View a [demo of Excelerator](https://youtu.be/csmS5V2ONr8) and see it [upload over 1 million rows (77MB)](https://www.youtube.com/watch?v=MLDnWLd1EHA). 
 
 Example use-cases include:
@@ -101,6 +102,43 @@ You'll get results that look similar to this:
 ![](images/image7.png)
 
 Repeat as-needed to gather data from Snowflake into your Excel sheet.
+
+### Query from worksheet formulas
+
+Use formulas to build recurring schedules without clearing surrounding cells. Install either rebuilt add-in, open your workbook, and click **Connect** once. An Excel agent can then discover tables, write SQL into a cell, insert formulas, and change a refresh cell without operating dialogs.
+
+```excel
+=SFVALUE("SELECT COUNT(*) FROM FINANCE.PUBLIC.GL_ENTRIES",$B$7)
+=SFQUERY(B12,TRUE,$B$7,10000)
+=SFSTATUS(A18)
+```
+
+`SFVALUE` returns one column and at most one row. `SFQUERY` spills rows and columns from its formula cell, with headers by default. Changing SQL or formula inputs fetches new data. Changing the optional refresh value also fetches again; ordinary recalculation reuses results, including failed attempts. Increment a shared refresh cell to refresh a schedule.
+
+Start with [the recurring schedule workbook](examples/RecurringSchedule.xlsx). Its example table and columns must be adapted to your Snowflake schema. See [the formula and agent guide](docs/Worksheet-functions.md) for discovery formulas, precision handling, troubleshooting, and validation instructions.
+
+The existing **Query** ribbon workflow still replaces the contents of its configured results sheet. Use the new worksheet formulas when working alongside existing schedules, formulas, or notes.
+
+### Hand off the Excelerator skill
+
+The reusable [Excelerator skill](skills/excelerator-excel/SKILL.md) guides an Excel agent through connection checks, schema discovery, scalar/table queries, controlled refresh, and accounting precision. Hand off the entire `skills/excelerator-excel` folder, including its `references` directory. It is self-contained and does not require the recipient to have this repository's developer tools.
+
+Example request: “Read `excelerator-excel/SKILL.md` and use it to build a monthly account schedule in this workbook, preserving my existing formulas and notes.” The agent needs tooling that can edit and evaluate formulas in the running Windows Excel instance; supplying the skill alone does not create that connection. Database write-back is outside this skill's scope.
+
+### Build and verify the add-ins
+
+Run these commands from PowerShell in the repository. Excel must allow **Trust access to the VBA project object model**; the scripts do not change that setting. Close any installed copies of these add-ins before replacing them.
+
+```powershell
+./scripts/Build-Addins.ps1 -TestOnly
+./scripts/Build-Addins.ps1
+./scripts/Test-Packages.ps1
+./scripts/Build-Example.ps1
+```
+
+The build imports the release source into a temporary copy, compiles the entire release VBA project, runs offline Excel/ADO integration tests, removes test components, compiles again, and verifies both packages before replacing the repository's `.xlam` files. The obsolete developer-only `TestHarness` and `Testing` modules remain in source but are excluded from release packages. The build does not connect to Snowflake or run live upload tests. To place packages elsewhere, pass `-OutputDirectory`.
+
+With Node.js installed, `node tests/run-offline.cjs` checks the production SQL scanner and result conversion using Windows Script Host and disconnected ADO recordsets. Its narrow VBA-to-VBScript adaptations do not replace the Excel integration tests.
 
 ### Write Data to Snowflake
 

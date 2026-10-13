@@ -8,8 +8,28 @@ Dim bSecondPass As Boolean ' used to allow execution of sql inside the open conn
 
 Sub Connect()
     On Error GoTo ErrorHandlerConnection
+    FormulaEngine.DetachConnection
     Set conn = Utils.getOpenDBConncetion(True)
+    CalculateWorkbook ActiveWorkbook
 ErrorHandlerConnection:
+End Sub
+
+Public Sub CalculateWorkbook(ByVal wb As Workbook)
+    Dim ws As Worksheet
+    If wb Is Nothing Then Exit Sub
+    For Each ws In wb.Worksheets
+        ws.Calculate
+    Next ws
+End Sub
+
+' Publish the session for worksheet formulas without exposing passwords.
+Public Sub NotifyFormulaConnection()
+    On Error GoTo NotReady
+    If bSecondPass Then Exit Sub
+    If mDBConnection Is Nothing Then Exit Sub
+    If mDBConnection.State <> 1 Then Exit Sub
+    FormulaEngine.AttachConnection ActiveWorkbook, mDBConnection
+NotReady:
 End Sub
 
 Function ConnectionStringDSNLess()
@@ -136,6 +156,7 @@ Function openLogin()
         SetRoleAndWarehouseForm.ShowMe (False) 'the False param allows the proc to check if the warehouse is empty first. It only opens if empty
     Loop
     Set openLogin = mDBConnection
+    NotifyFormulaConnection
     Exit Function
 ErrorHandlerConnection:
     err.Raise giCancelEvent
@@ -320,6 +341,9 @@ Sub execSQLFireAndForget(sqlString As String)
     On Error GoTo ErrorHandlerExecSQL
     Set conn = getOpenDBConncetion(False)
     Set rs = conn.Execute(sqlString)
+    If LCase$(Left$(Trim$(sqlString), 4)) = "use " Or LCase$(Left$(Trim$(sqlString), 13)) = "alter session" Then
+        NotifyFormulaConnection
+    End If
     Exit Sub
 ErrorHandlerExecSQL:
     If err.Number = giCancelEvent Then
@@ -396,7 +420,7 @@ End Function
 Function lastPopulatedCell()
     Dim statusWorksheet As Worksheet
     Set statusWorksheet = Sheets(CustomRange(sgRangeLogWorksheet))
-    i = statusWorksheet.CustomRange(sgLastCellOnLogWS).End(xlUp).row
+    i = statusWorksheet.range(sgLastCellOnLogWS).End(xlUp).row
     lastPopulatedCell = "A" & i
 End Function
 
